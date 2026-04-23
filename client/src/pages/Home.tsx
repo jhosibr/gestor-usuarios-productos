@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
+import Admin from './Admin';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { LogOut, Users, Package, ShoppingCart, BarChart3 } from 'lucide-react';
+import { LogOut, ShoppingCart, Plus, Trash2 } from 'lucide-react';
 
 export default function Home() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('Admin@12345');
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -22,6 +22,21 @@ export default function Home() {
       if (cartData) {
         setCart(JSON.parse(cartData));
       }
+    }
+
+    const savedProducts = localStorage.getItem('app_products');
+    if (savedProducts) {
+      setProducts(JSON.parse(savedProducts));
+    } else {
+      const defaultProducts = [
+        { id: 1, name: 'Laptop Dell', category: 'Electrónica', price: 999.99, stock: 10, description: 'Laptop potente para trabajo' },
+        { id: 2, name: 'Mouse Logitech', category: 'Accesorios', price: 29.99, stock: 50, description: 'Mouse inalámbrico' },
+        { id: 3, name: 'Teclado Mecánico', category: 'Accesorios', price: 89.99, stock: 25, description: 'Teclado RGB' },
+        { id: 4, name: 'Monitor LG 27"', category: 'Electrónica', price: 299.99, stock: 15, description: 'Monitor 4K' },
+        { id: 5, name: 'Webcam HD', category: 'Accesorios', price: 59.99, stock: 30, description: 'Webcam 1080p' }
+      ];
+      setProducts(defaultProducts);
+      localStorage.setItem('app_products', JSON.stringify(defaultProducts));
     }
   }, []);
 
@@ -78,10 +93,19 @@ export default function Home() {
   };
 
   const addToCart = (product: any) => {
+    if (product.stock <= 0) {
+      setError('Producto sin stock disponible');
+      return;
+    }
     const newCart = [...cart];
     const existingItem = newCart.find(item => item.id === product.id);
     if (existingItem) {
-      existingItem.quantity++;
+      if (existingItem.quantity < product.stock) {
+        existingItem.quantity++;
+      } else {
+        setError('No hay más stock disponible');
+        return;
+      }
     } else {
       newCart.push({ ...product, quantity: 1 });
     }
@@ -95,24 +119,17 @@ export default function Home() {
     localStorage.setItem('cart', JSON.stringify(newCart));
   };
 
+  const handleCheckout = () => {
+    if (cart.length === 0) {
+      setError('El carrito está vacío');
+      return;
+    }
+    alert(`✅ Compra realizada exitosamente!\nTotal: $${cartTotal.toFixed(2)}`);
+    setCart([]);
+    localStorage.removeItem('cart');
+  };
+
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  const products = [
-    { id: 1, name: 'Laptop Dell', category: 'Electrónica', price: 999.99, stock: 10, description: 'Laptop potente para trabajo' },
-    { id: 2, name: 'Mouse Logitech', category: 'Accesorios', price: 29.99, stock: 50, description: 'Mouse inalámbrico' },
-    { id: 3, name: 'Teclado Mecánico', category: 'Accesorios', price: 89.99, stock: 25, description: 'Teclado RGB' },
-    { id: 4, name: 'Monitor LG 27"', category: 'Electrónica', price: 299.99, stock: 15, description: 'Monitor 4K' },
-    { id: 5, name: 'Webcam HD', category: 'Accesorios', price: 59.99, stock: 30, description: 'Webcam 1080p' }
-  ];
-
-  const users = [
-    { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' },
-    { id: 6, name: 'Louis Jhosimar Ocampo', email: 'louis@example.com', role: 'admin' },
-    { id: 2, name: 'Juan Pérez', email: 'juan@example.com', role: 'user' },
-    { id: 3, name: 'María García', email: 'maria@example.com', role: 'user' },
-    { id: 4, name: 'Carlos López', email: 'carlos@example.com', role: 'user' },
-    { id: 5, name: 'Ana Martínez', email: 'ana@example.com', role: 'user' }
-  ];
 
   // Login View
   if (!user) {
@@ -181,158 +198,12 @@ export default function Home() {
     );
   }
 
-  // Admin Dashboard
+  // Admin View
   if (user.role === 'admin') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-purple-600">📊 Panel de Administración</h1>
-              <p className="text-gray-600 mt-1">Bienvenido, {user.name}</p>
-            </div>
-            <Button variant="outline" onClick={handleLogout} className="flex gap-2">
-              <LogOut className="w-4 h-4" />
-              Cerrar Sesión
-            </Button>
-          </div>
-        </header>
-
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Total Usuarios</p>
-                  <p className="text-3xl font-bold text-purple-600 mt-2">{users.length}</p>
-                </div>
-                <Users className="w-12 h-12 text-purple-200" />
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Total Productos</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-2">{products.length}</p>
-                </div>
-                <Package className="w-12 h-12 text-blue-200" />
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Total Compras</p>
-                  <p className="text-3xl font-bold text-green-600 mt-2">25</p>
-                </div>
-                <ShoppingCart className="w-12 h-12 text-green-200" />
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Ventas Totales</p>
-                  <p className="text-3xl font-bold text-orange-600 mt-2">$5,234.75</p>
-                </div>
-                <BarChart3 className="w-12 h-12 text-orange-200" />
-              </div>
-            </Card>
-          </div>
-
-          <Tabs defaultValue="users" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="users">👥 Usuarios</TabsTrigger>
-              <TabsTrigger value="products">📦 Productos</TabsTrigger>
-              <TabsTrigger value="purchases">🛒 Compras</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="users" className="mt-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-6">Gestión de Usuarios</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-semibold">ID</th>
-                        <th className="text-left py-3 px-4 font-semibold">Nombre</th>
-                        <th className="text-left py-3 px-4 font-semibold">Email</th>
-                        <th className="text-left py-3 px-4 font-semibold">Rol</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map(u => (
-                        <tr key={u.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4">{u.id}</td>
-                          <td className="py-3 px-4">{u.name}</td>
-                          <td className="py-3 px-4">{u.email}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {u.role.toUpperCase()}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="products" className="mt-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-6">Gestión de Productos</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-semibold">ID</th>
-                        <th className="text-left py-3 px-4 font-semibold">Nombre</th>
-                        <th className="text-left py-3 px-4 font-semibold">Categoría</th>
-                        <th className="text-left py-3 px-4 font-semibold">Precio</th>
-                        <th className="text-left py-3 px-4 font-semibold">Stock</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.map(p => (
-                        <tr key={p.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4">{p.id}</td>
-                          <td className="py-3 px-4">{p.name}</td>
-                          <td className="py-3 px-4">{p.category}</td>
-                          <td className="py-3 px-4">${p.price.toFixed(2)}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              p.stock > 20 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {p.stock}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="purchases" className="mt-6">
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-6">Historial de Compras</h2>
-                <div className="text-center py-8 text-gray-500">
-                  No hay compras registradas aún
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </main>
-      </div>
-    );
+    return <Admin />;
   }
 
-  // User Catalog
+  // User View - Catálogo y Carrito
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
@@ -341,44 +212,40 @@ export default function Home() {
             <h1 className="text-3xl font-bold text-purple-600">🛍️ Catálogo de Productos</h1>
             <p className="text-gray-600 mt-1">Bienvenido, {user.name}</p>
           </div>
-          <div className="flex gap-4 items-center">
-            <span className="text-sm font-medium">Carrito: {cart.length} items</span>
-            <Button variant="outline" onClick={handleLogout} className="flex gap-2">
-              <LogOut className="w-4 h-4" />
-              Cerrar Sesión
-            </Button>
-          </div>
+          <Button variant="outline" onClick={handleLogout} className="flex gap-2">
+            <LogOut className="w-4 h-4" />
+            Cerrar Sesión
+          </Button>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Products */}
+          {/* Catálogo */}
           <div className="lg:col-span-2">
             <h2 className="text-2xl font-bold mb-6">Productos Disponibles</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {products.map(product => (
                 <Card key={product.id} className="overflow-hidden hover:shadow-lg transition">
-                  <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 text-white">
-                    <h3 className="font-bold text-lg">{product.name}</h3>
-                    <p className="text-sm opacity-90">{product.category}</p>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-gray-600 text-sm mb-3">{product.description}</p>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold mb-2">{product.name}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{product.category}</p>
+                    <p className="text-gray-700 text-sm mb-4">{product.description}</p>
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-2xl font-bold text-purple-600">${product.price.toFixed(2)}</span>
-                      <span className={`text-sm font-medium px-3 py-1 rounded ${
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                         product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
-                        Stock: {product.stock}
+                        {product.stock > 0 ? `${product.stock} en stock` : 'Sin stock'}
                       </span>
                     </div>
                     <Button
                       onClick={() => addToCart(product)}
-                      className="w-full bg-purple-600 hover:bg-purple-700"
-                      disabled={product.stock === 0}
+                      disabled={product.stock <= 0}
+                      className="w-full bg-purple-600 hover:bg-purple-700 flex gap-2"
                     >
-                      🛒 Añadir al Carrito
+                      <Plus className="w-4 h-4" />
+                      Añadir al Carrito
                     </Button>
                   </div>
                 </Card>
@@ -386,40 +253,56 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Cart */}
+          {/* Carrito */}
           <div>
-            <Card className="p-6 sticky top-4">
-              <h2 className="text-xl font-bold mb-4">Mi Carrito</h2>
+            <Card className="p-6 sticky top-8">
+              <h2 className="text-xl font-bold mb-4 flex gap-2">
+                <ShoppingCart className="w-5 h-5" />
+                Mi Carrito ({cart.length})
+              </h2>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
+                  {error}
+                </div>
+              )}
+
               {cart.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">Tu carrito está vacío</p>
               ) : (
                 <>
-                  <div className="space-y-4 mb-6">
+                  <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                     {cart.map(item => (
-                      <div key={item.id} className="flex justify-between items-start pb-4 border-b">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
-                          <p className="text-sm font-semibold text-purple-600">${(item.price * item.quantity).toFixed(2)}</p>
+                      <div key={item.id} className="border-b pb-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-sm text-gray-600">${item.price.toFixed(2)} x {item.quantity}</p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-red-600"
-                        >
-                          ✕
-                        </Button>
+                        <p className="font-bold text-purple-600">${(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="font-bold">Total:</span>
-                      <span className="text-2xl font-bold text-purple-600">${cartTotal.toFixed(2)}</span>
+
+                  <div className="border-t pt-4 space-y-4">
+                    <div className="flex justify-between items-center text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-purple-600">${cartTotal.toFixed(2)}</span>
                     </div>
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
-                      ✓ Comprar
+                    <Button
+                      onClick={handleCheckout}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      ✅ Realizar Compra
                     </Button>
                   </div>
                 </>
