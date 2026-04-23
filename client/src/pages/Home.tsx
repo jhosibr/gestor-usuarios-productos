@@ -40,6 +40,15 @@ export default function Home() {
         };
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
+      } else if (email === 'louis@example.com' && password === 'prueba123') {
+        const userData = {
+          id: 6,
+          name: 'Louis Jhosimar Ocampo',
+          email: 'louis@example.com',
+          role: 'admin'
+        };
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
       } else if (email === 'user@example.com' && password === 'User@12345') {
         const userData = {
           id: 2,
@@ -98,6 +107,7 @@ export default function Home() {
 
   const users = [
     { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' },
+    { id: 6, name: 'Louis Jhosimar Ocampo', email: 'louis@example.com', role: 'admin' },
     { id: 2, name: 'Juan Pérez', email: 'juan@example.com', role: 'user' },
     { id: 3, name: 'María García', email: 'maria@example.com', role: 'user' },
     { id: 4, name: 'Carlos López', email: 'carlos@example.com', role: 'user' },
@@ -161,7 +171,8 @@ export default function Home() {
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-xs text-blue-800 font-semibold mb-2">📝 Credenciales de Prueba:</p>
-              <p className="text-xs text-blue-700 mb-1"><strong>Admin:</strong> admin@example.com / Admin@12345</p>
+              <p className="text-xs text-blue-700 mb-1"><strong>Admin 1:</strong> admin@example.com / Admin@12345</p>
+              <p className="text-xs text-blue-700 mb-1"><strong>Admin 2:</strong> louis@example.com / prueba123</p>
               <p className="text-xs text-blue-700"><strong>User:</strong> user@example.com / User@12345</p>
             </div>
           </div>
